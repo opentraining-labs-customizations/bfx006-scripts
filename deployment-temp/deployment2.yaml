@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rhscl-httpd
+spec:
+  selector:
+    matchLabels:
+      app: rhscl-httpd
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: rhscl-httpd
+    spec:
+      containers:
+      - image: "registry.access.redhat.com/rhscl/httpd-24-rhel7"
+        imagePullPolicy: IfNotPresent
+        name: httpd
+        ports:
+        - containerPort: 8080
+          name: httport
+        - containerPort: 8443
+          name: httpsport
+        volumeMounts:
+        - mountPath: /var/www/html
+          name: httpd-data
+        readinessProbe:
+          tcpSocket:
+             port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+#        livenessProbe:
+#          httpGet:
+#            path: /index.html
+#            port: httport
+#          initialDelaySeconds: 2
+#          periodSeconds: 2
+#          timeoutSeconds: 1
+#          successThreshold: 1
+#          failureThreshold: 3
+      restartPolicy: Always
+      volumes:
+      - name: httpd-data
+        persistentVolumeClaim:
+          claimName: myclaim
