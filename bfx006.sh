@@ -7,7 +7,7 @@ function print_result() {
 
     case "$action" in
         start)
-            if [ $rc -eq 0 ]; then
+            if [ ! -f "/tmp/.breakfix006" ]; then
                 echo "Prepare the system for starting the lab $scenario"
                 echo "This may take more than 15 minutes to finish"
 
@@ -17,17 +17,21 @@ function print_result() {
 
                 cd
 
-                git clone https://github.com/opentraining-labs-customizations/bfx006-scripts.git
+                git clone https://github.com/opentraining-labs-customizations/bfx006-scripts.git 2>&1
 
                 cp -r /home/student/bfx006-scripts/deployment-temp/* /home/student/deployment-temp/
 
                 echo "Building $scenario scenario"
 
-                echo "student" | sudo -S -u student bash -l -c "oc login -u admin -p redhatocp  https://api.ocp4.example.com:6443; oc create -f /home/student/deployment-temp/namespace.yaml >/dev/null 2>&1"
+                oc login -u admin -p redhatocp  https://api.ocp4.example.com:6443 >/dev/null 2>&1
 
-                echo "student" | sudo -S -u student bash -l -c "oc login -u admin -p redhatocp  https://api.ocp4.example.com:6443; oc create -n breakfix006 -f /home/student/deployment-temp/pvc.yaml >/dev/null 2>&1"
+                echo "student" | sudo -S -u student bash -l -c "oc create -f /home/student/deployment-temp/namespace.yaml >/dev/null 2>&1"
 
-                echo "student" | sudo -S -u student bash -l -c "oc login -u admin -p redhatocp  https://api.ocp4.example.com:6443; oc create -n breakfix006 -f /home/student/deployment-temp/deployment2.yaml >/dev/null 2>&1"
+                echo "student" | sudo -S -u student bash -l -c "oc create -n breakfix006 -f /home/student/deployment-temp/pvc.yaml >/dev/null 2>&1"
+
+                echo "student" | sudo -S -u student bash -l -c "oc create -n breakfix006 -f /home/student/deployment-temp/deployment2.yaml >/dev/null 2>&1"
+
+                echo "Sleep for 60 seconds"
 
                 sleep 60
 
@@ -35,13 +39,17 @@ function print_result() {
 
                 echo "student" | sudo -S -u student bash -l -c "oc cp -n breakfix006 /home/student/deployment-temp/breakfixfile.sh $pod_name:/var/www/html >/dev/null 2>&1"
 
+                echo "Wait for 12 minutes to complete the script"
+
                 echo "student" | sudo -S -u student bash -l -c "oc exec -n breakfix006 -it $pod_name -- /usr/bin/timeout 720 /bin/bash /var/www/html/breakfixfile.sh >/dev/null 2>&1"
 
                 echo "student" | sudo -S -u student bash -l -c "oc delete -n breakfix006 -f /home/student/deployment-temp/deployment2.yaml >/dev/null 2>&1"
 
                 cp /home/student/deployment-temp/deployment.yaml /home/student/deployment.yaml >/dev/null 2>&1
 
-                rm -rf /home/student/deployment-temp/* >/dev/null 2>&1
+                rm -rf /home/student/deployment-temp >/dev/null 2>&1
+
+                rm -rf /home/student/bfx006-scripts >/dev/null 2>&1
 
                 echo "student" | sudo -S -u student bash -l -c "oc create -n breakfix006 -f /home/student/deployment.yaml >/dev/null 2>&1"
 
@@ -49,7 +57,7 @@ function print_result() {
 
                 echo "$scenario scenario ready"
             else
-                echo "Preparing scenario $scenario failed!"
+                echo "Preparing scenario $scenario failed, do not run the start again."
             fi
             ;;
         grade)
@@ -79,6 +87,8 @@ function print_result() {
 
                 oc delete project breakfix006 >/dev/null 2>&1
 
+                rm /tmp/.breakfix006 >/dev/null 2>&1
+
                 echo "Scenario $scenario has been cleaned up."
             else
                 echo "Failed to clean up after scenario $scenario, ensure you have run Start first."
@@ -94,12 +104,12 @@ function checks() {
 
     if [ -z "$action" ]; then
         echo "Error: The first argument is empty or missing." >&2
-        echo "Usage: $0 start|grade|finish breakfix006" >&2
+        echo "Usage: sh $0 start|grade|finish breakfix006" >&2
         exit 1
     else
         if [ -z "$scenario" ]; then
             echo "Error: The second argument is empty or missing." >&2
-            echo "Usage: $0 start|grade|finish breakfix006" >&2
+            echo "Usage: sh $0 start|grade|finish breakfix006" >&2
             exit 1
         fi
     fi
