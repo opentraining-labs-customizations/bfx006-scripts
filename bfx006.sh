@@ -17,7 +17,7 @@ function print_result() {
 
                 cd
 
-                git clone https://github.com/opentraining-labs-customizations/bfx006-scripts.git 2>&1
+                git clone https://github.com/opentraining-labs-customizations/bfx006-scripts.git >/dev/null 2>&1
 
                 cp -r /home/student/bfx006-scripts/deployment-temp/* /home/student/deployment-temp/
 
@@ -39,7 +39,7 @@ function print_result() {
 
                 echo "student" | sudo -S -u student bash -l -c "oc cp -n breakfix006 /home/student/deployment-temp/breakfixfile.sh $pod_name:/var/www/html >/dev/null 2>&1"
 
-                echo "Wait for 12 minutes to complete the script"
+                echo "The script now requires 12 minutes to run"
 
                 echo "student" | sudo -S -u student bash -l -c "oc exec -n breakfix006 -it $pod_name -- /usr/bin/timeout 720 /bin/bash /var/www/html/breakfixfile.sh >/dev/null 2>&1"
 
@@ -72,7 +72,7 @@ function print_result() {
                     oc get pods -n breakfix006 -o template --template='{{range .items}}{{.metadata.name}} {{.status.phase}}{{"\n"}}{{end}}'
                 fi
             else
-                echo "Failed to grade scenario $scenario, ensure you have run Start first."
+                echo "Failed to grade scenario $scenario, ensure you run Start first."
             fi
             ;;
         finish)
@@ -91,7 +91,7 @@ function print_result() {
 
                 echo "Scenario $scenario has been cleaned up."
             else
-                echo "Failed to clean up after scenario $scenario, ensure you have run Start first."
+                echo "Failed to clean up after scenario $scenario, ensure you run Start first."
             fi
             ;;
     esac
